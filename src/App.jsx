@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './index.css';
+import './assets/styles.css';
 
-// Replace this with your actual backend base URL
 const BASE_URL = "http://localhost:8000";
 
 const App = () => {
