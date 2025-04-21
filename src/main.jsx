@@ -1,16 +1,13 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+import { BrowserRouter } from 'react-router-dom'
 
-const root = document.getElementById("root"); 
-
-if (root) {
-  ReactDOM.createRoot(root).render(
-    <React.StrictMode>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter basename="/CBeatrixBacolanta">
       <App />
-    </React.StrictMode>
-  );
-} else {
-  console.error("❌ Root element not found! Check index.html");
-}
+    </BrowserRouter>
+  </React.StrictMode>
+)
