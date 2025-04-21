@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './index.css'
 
-const BASE_URL = "https://backend-fapi.onrender.com/docs";
+const BASE_URL = "https://backend-fapi.onrender.com"
 
 const App = () => {
   const [todos, setTodos] = useState([]);
