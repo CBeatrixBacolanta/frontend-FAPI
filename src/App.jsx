@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './index.css';
 
+// Replace this with your actual backend base URL
+const BASE_URL = "http://localhost:8000";
+
 const App = () => {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [task, setTask] = useState("");
-  const [description, setDescription] = useState("");
   const [editIndex, setEditIndex] = useState(null);
   const [editText, setEditText] = useState("");
-  const [editDescription, setEditDescription] = useState("");
   const [filter, setFilter] = useState("all");
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("darkMode") === "true"
@@ -21,29 +22,39 @@ const App = () => {
     document.body.className = darkMode ? "dark" : "light";
   }, [darkMode]);
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL || "https://td-backend-mh4l.onrender.com";
+  const fetchTodos = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/todos`);
+      setTodos(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+      setError("Failed to load todos");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
   const addTask = async () => {
     if (task.trim() === "") return;
     try {
-      const response = await axios.post(`${baseURL}/api/todos/`, {
-        title: task,
-        description: description,
-        completed: false
+      const response = await axios.post(`${BASE_URL}/todos`, {
+        title: task
       });
-      console.log('Add task response:', response.data);
       setTodos([...todos, response.data]);
       setTask("");
-      setDescription("");
     } catch (err) {
-      console.error('Add task error:', err.response?.data || err.message);
-      setError(err.response?.data?.detail || "Failed to add task. Please check the console for details.");
+      console.error('Add task error:', err);
+      setError("Failed to add task.");
     }
   };
 
   const removeTask = async (id) => {
     try {
-      await axios.delete(`${baseURL}/api/todos/${id}/`);
+      await axios.delete(`${BASE_URL}/todos/${id}`);
       setTodos(todos.filter(todo => todo.id !== id));
     } catch (err) {
       setError("Failed to delete task");
@@ -53,8 +64,8 @@ const App = () => {
   const toggleComplete = async (id) => {
     try {
       const todo = todos.find(t => t.id === id);
-      const response = await axios.put(`${baseURL}/api/todos/${id}/`, {
-        ...todo,
+      const response = await axios.put(`${BASE_URL}/todos/${id}`, {
+        title: todo.title,
         completed: !todo.completed
       });
       setTodos(todos.map(t => t.id === id ? response.data : t));
@@ -67,15 +78,14 @@ const App = () => {
     const todo = todos.find(t => t.id === id);
     setEditIndex(id);
     setEditText(todo.title);
-    setEditDescription(todo.description || "");
   };
 
   const saveEdit = async (id) => {
     try {
-      const response = await axios.put(`${baseURL}/api/todos/${id}/`, {
+      const todo = todos.find(t => t.id === id);
+      const response = await axios.put(`${BASE_URL}/todos/${id}`, {
         title: editText,
-        description: editDescription,
-        completed: todos.find(t => t.id === id).completed
+        completed: todo.completed
       });
       setTodos(todos.map(t => t.id === id ? response.data : t));
       setEditIndex(null);
@@ -89,22 +99,6 @@ const App = () => {
     if (filter === "pending") return todos.filter((t) => !t.completed);
     return todos;
   };
-
-  useEffect(() => {
-    console.log('Fetching todos from:', `${baseURL}/api/todos/`);
-
-    axios.get(`${baseURL}/api/todos/`)
-      .then(response => {
-        console.log('Todos fetched:', response.data);
-        setTodos(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching todos:', error);
-        setError("Failed to load todos");
-        setLoading(false);
-      });
-  }, [baseURL]);
 
   return (
     <div>
@@ -137,11 +131,6 @@ const App = () => {
               onChange={(e) => setTask(e.target.value)}
             />
           </div>
-          <textarea
-            placeholder="Add description..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
           <button className="add-task-btn" onClick={addTask}>Add Task</button>
         </div>
         <div className="filters">
@@ -154,30 +143,22 @@ const App = () => {
             <li key={todo.id} className={`task-card ${todo.completed ? "completed" : ""}`}>
               <input type="checkbox" checked={todo.completed} onChange={() => toggleComplete(todo.id)} />
               <div className="task-content">
-                <strong>{todo.title}</strong>
-                {todo.description && <p className="task-description">{todo.description}</p>}
+                {editIndex === todo.id ? (
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                ) : (
+                  <strong>{todo.title}</strong>
+                )}
               </div>
               <div className="task-actions">
                 {editIndex === todo.id ? (
-                  <div className="edit-form">
-                    <div className="edit-inputs">
-                      <input
-                        type="text"
-                        placeholder="Edit task title..."
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                      />
-                      <textarea
-                        placeholder="Edit description..."
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                    </div>
-                    <div className="edit-actions">
-                      <button className="save-btn" onClick={() => saveEdit(todo.id)}>Save</button>
-                      <button className="cancel-btn" onClick={() => setEditIndex(null)}>Cancel</button>
-                    </div>
-                  </div>
+                  <>
+                    <button className="save-btn" onClick={() => saveEdit(todo.id)}>Save</button>
+                    <button className="cancel-btn" onClick={() => setEditIndex(null)}>Cancel</button>
+                  </>
                 ) : (
                   <>
                     <button className="edit-btn" onClick={() => startEdit(todo.id)}>✏️</button>
